@@ -1,0 +1,21 @@
+# Archivos Python
+*.py
+__pycache__/
+*.pyc
+
+# Archivos de presentación original
+diapos.pptx
+
+# Carpeta de slides (ya están en el HTML)
+slides/
+
+# Archivos bat
+*.bat
+
+# Documentación local
+README.md
+INSTRUCCIONES.txt
+
+# Template base
+presentation-base.html
+presentation-viewer.html

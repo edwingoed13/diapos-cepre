@@ -1,0 +1,16 @@
+{
+  "name": "presentacion-automatica",
+  "version": "1.0.0",
+  "description": "Visor de presentaciones automático con controles configurables",
+  "scripts": {
+    "start": "python servidor.py"
+  },
+  "keywords": [
+    "presentacion",
+    "powerpoint",
+    "slides",
+    "automatico"
+  ],
+  "author": "",
+  "license": "MIT"
+}

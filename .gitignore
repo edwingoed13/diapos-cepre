@@ -1,0 +1,45 @@
+# Python
+*.py
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# PowerPoint files
+*.pptx
+*.ppt
+
+# Image folders (already embedded)
+slides/
+images/
+
+# Batch files
+*.bat
+
+# Temporary files
+*.tmp
+*.temp
+~*
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local documentation
+INSTRUCCIONES.txt
+DESPLIEGUE_VERCEL.md
+
+# Development files
+presentation-viewer.html
+presentation-base.html
+servidor.py
+
+# Claude specific
+.claude/
