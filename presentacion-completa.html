@@ -680,80 +680,111 @@
     </script>
 
     <script>
+    // TikTok Video IDs array mapped by slide index
+    const TIKTOK_VIDEOS = [
+        '7615365133493128469',
+        '7614679738572901650',
+        '7614253685245332757',
+        '7613874993742548244',
+        '7613468370314317076'
+    ];
+
     // TikTok Video Embedding JavaScript
     (function() {
         let currentVideoUrl = '';
+        let viewerInstance = null;
 
-        // Function to load TikTok video
-        function loadTikTokVideo(videoId, videoUrl) {
-        const videoEmbed = document.getElementById('video-embed-area');
-        if (videoEmbed && videoId) {
+        // Function to load TikTok video by ID
+        function loadTikTokVideo(videoId) {
+            console.log('loadTikTokVideo called with ID:', videoId);
+
+            const videoEmbed = document.getElementById('video-embed-area');
+            if (!videoEmbed) {
+                console.error('video-embed-area element not found');
+                return;
+            }
+
+            if (!videoId) {
+                console.error('No video ID provided');
+                return;
+            }
+
+            const videoUrl = `https://www.tiktok.com/@cepreuna_puno/video/${videoId}`;
+
+            // Use blockquote format that works with TikTok's embed script
             videoEmbed.innerHTML = `
-                <blockquote class="tiktok-embed" 
-                    cite="${videoUrl}" 
-                    data-video-id="${videoId}" 
-                    style="max-width: 100%; min-width: 100%; height: 100%;">
+                <blockquote class="tiktok-embed"
+                    cite="${videoUrl}"
+                    data-unique-id="cepreuna_puno"
+                    data-video-id="${videoId}"
+                    style="max-width: 100%; width: 100%; height: 100%;">
                     <section>
-                        <a target="_blank" title="@cepreuna_puno" href="${videoUrl}">@cepreuna_puno</a>
+                        <a target="_blank" title="@cepreuna_puno" href="${videoUrl}">View this video on TikTok</a>
                     </section>
                 </blockquote>
             `;
+
             currentVideoUrl = videoUrl;
-            console.log('Loading TikTok video:', videoUrl);
-            
-            // Reload TikTok embed script
-            if (window.tiktok && window.tiktok.Embed) {
+            console.log('HTML injected for video:', videoUrl);
+
+            // Reload TikTok embed script to process the new blockquote
+            if (window.tiktok && window.tiktok.Embed && window.tiktok.Embed.lib) {
+                console.log('Calling tiktok.Embed.lib.render()');
                 window.tiktok.Embed.lib.render(videoEmbed);
+            } else {
+                console.warn('TikTok Embed script not yet loaded. It will render when ready.');
             }
         }
-    }
 
-        // Function to get current slide's video data
-        function getCurrentSlideVideoData() {
-            // Find the currently visible slide
-            const slides = document.querySelectorAll('img.slide, img[id^="slide-"]');
-            let currentSlide = null;
-
-            for (let slide of slides) {
-                const rect = slide.getBoundingClientRect();
-                const isVisible = rect.top >= 0 && rect.left >= 0 &&
-                                rect.bottom <= window.innerHeight &&
-                                rect.right <= window.innerWidth;
-                if (isVisible || slide.style.display !== 'none') {
-                    currentSlide = slide;
-                    break;
-                }
+        // Get video ID for current slide index
+        function getVideoIdForSlide(slideIndex) {
+            console.log('getVideoIdForSlide called with index:', slideIndex);
+            if (slideIndex >= 0 && slideIndex < TIKTOK_VIDEOS.length) {
+                const videoId = TIKTOK_VIDEOS[slideIndex];
+                console.log('Video ID for slide', slideIndex, ':', videoId);
+                return videoId;
             }
-
-            if (!currentSlide && slides.length > 0) {
-                currentSlide = slides[0];
-            }
-
-            if (currentSlide) {
-                return {
-                    videoUrl: currentSlide.getAttribute('data-video-url'),
-                    videoId: currentSlide.getAttribute('data-video-id')
-                };
-            }
+            console.warn('No video found for slide index:', slideIndex);
             return null;
         }
 
-        // Override or hook into fullscreen functionality
-        const originalFullscreenFunction = window.enterFullscreen || function() {};
+        // Get the viewer instance
+        function getViewerInstance() {
+            if (!viewerInstance && window.viewer) {
+                viewerInstance = window.viewer;
+                console.log('Found viewer instance');
+            }
+            return viewerInstance;
+        }
 
+        // Override or hook into fullscreen functionality
         window.enterFullscreen = function() {
+            console.log('enterFullscreen called');
             const body = document.body;
             body.classList.add('fullscreen-active');
 
-            // Load video for current slide
-            const videoData = getCurrentSlideVideoData();
-            if (videoData && videoData.videoId) {
-                loadTikTokVideo(videoData.videoId, videoData.videoUrl);
+            // Get current slide index from viewer
+            const viewer = getViewerInstance();
+            if (viewer && viewer.currentIndex !== undefined) {
+                const currentIndex = viewer.currentIndex;
+                console.log('Current slide index:', currentIndex);
+
+                const videoId = getVideoIdForSlide(currentIndex);
+                if (videoId) {
+                    console.log('Loading video for slide', currentIndex);
+                    loadTikTokVideo(videoId);
+                } else {
+                    console.warn('No video ID available for slide', currentIndex);
+                }
+            } else {
+                console.warn('Could not access viewer instance');
             }
 
             // Try to enter browser fullscreen
             if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen();
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.warn('Fullscreen request failed:', err);
+                });
             } else if (document.documentElement.webkitRequestFullscreen) {
                 document.documentElement.webkitRequestFullscreen();
             } else if (document.documentElement.msRequestFullscreen) {
@@ -762,6 +793,7 @@
         };
 
         window.exitFullscreen = function() {
+            console.log('exitFullscreen called');
             const body = document.body;
             body.classList.remove('fullscreen-active');
 
@@ -769,11 +801,14 @@
             const videoEmbed = document.getElementById('video-embed-area');
             if (videoEmbed) {
                 videoEmbed.innerHTML = '';
+                console.log('Video embed cleared');
             }
 
             // Exit browser fullscreen
             if (document.exitFullscreen) {
-                document.exitFullscreen();
+                document.exitFullscreen().catch(err => {
+                    console.warn('Exit fullscreen failed:', err);
+                });
             } else if (document.webkitExitFullscreen) {
                 document.webkitExitFullscreen();
             } else if (document.msExitFullscreen) {
@@ -783,40 +818,31 @@
 
         // Handle slide changes in fullscreen mode
         window.updateVideoForSlide = function() {
+            console.log('updateVideoForSlide called');
             if (document.body.classList.contains('fullscreen-active')) {
-                const videoData = getCurrentSlideVideoData();
-                if (videoData && videoData.videoId) {
-                    loadTikTokVideo(videoData.videoId, videoData.videoUrl);
+                const viewer = getViewerInstance();
+                if (viewer && viewer.currentIndex !== undefined) {
+                    const currentIndex = viewer.currentIndex;
+                    console.log('Updating video for current slide:', currentIndex);
+
+                    const videoId = getVideoIdForSlide(currentIndex);
+                    if (videoId) {
+                        loadTikTokVideo(videoId);
+                    }
                 }
             }
         };
 
-        // Hook into existing navigation functions if they exist
-        const originalNext = window.nextSlide;
-        const originalPrev = window.prevSlide;
-
-        if (originalNext) {
-            window.nextSlide = function() {
-                originalNext.call(this);
-                setTimeout(updateVideoForSlide, 100);
-            };
-        }
-
-        if (originalPrev) {
-            window.prevSlide = function() {
-                originalPrev.call(this);
-                setTimeout(updateVideoForSlide, 100);
-            };
-        }
-
         // Listen for fullscreen changes
         document.addEventListener('fullscreenchange', function() {
+            console.log('fullscreenchange event fired');
             if (!document.fullscreenElement) {
                 exitFullscreen();
             }
         });
 
         document.addEventListener('webkitfullscreenchange', function() {
+            console.log('webkitfullscreenchange event fired');
             if (!document.webkitFullscreenElement) {
                 exitFullscreen();
             }
@@ -833,7 +859,7 @@
     })();
     </script>
 
-    <!-- TikTok Embed Script -->
-    <script async src="https://www.tiktok.com/embed.js"></script>
+
+    <!-- TikTok Embed Script -->async src="https://www.tiktok.com/embed.js"></script>
 </body>
 </html>
